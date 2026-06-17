@@ -2,12 +2,11 @@
 
 > **Shielding my right to roam the digital world. 🚀**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/usamagulzar/dpi-bypass-proxy/releases/tag/v1.0.0)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)]()
-[![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ugseecs/LiberationDPI/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/ugseecs/LiberationDPI/blob/main/LICENSE)
+[![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-blue.svg)](https://github.com/ugseecs/LiberationDPI)
+[![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)](https://github.com/ugseecs/LiberationDPI)
 
----
 
 ## What Is This?
 
@@ -117,7 +116,7 @@ The proxy runs locally on `127.0.0.1:40000` (SOCKS5). You do **not** want to rou
 
 ### Setup Steps
 
-1. Install the **ZeroOmega** extension from your browser's extension store (Chrome, Edge, or Firefox)
+1. Install the **[ZeroOmega](https://chromewebstore.google.com/detail/proxy-switchyomega-3-zero/pfnededegaaopdmhkdmcofjmoldfiped?hl=en)** extension from your browser's extension store (Chrome, Edge, or Firefox)
 2. Open the extension **Options**
 3. Click **New Profile**, name it `Mihomo Core`, set type to **Proxy Profile**
 4. Set:
