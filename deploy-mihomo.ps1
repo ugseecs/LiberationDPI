@@ -20,12 +20,13 @@ param(
     [switch]$Uninstall
 )
 
-$ScriptVersion      = "1.0.0"
+$ScriptVersion      = "1.2.0"
 $MinPSVersion       = [Version]"5.1"
 $ProgressPreference = 'SilentlyContinue'
 
+# ---------------------------------------------------------------------------
 # Guard: PowerShell Version & Admin Escalation
-
+# ---------------------------------------------------------------------------
 if ($PSVersionTable.PSVersion -lt $MinPSVersion) {
     Write-Error "PowerShell $MinPSVersion or later is required. You have $($PSVersionTable.PSVersion)."
     Exit 1
@@ -40,8 +41,9 @@ if (-not $isAdmin) {
     Exit
 }
 
+# ---------------------------------------------------------------------------
 # Core Layout Paths Matrix
-
+# ---------------------------------------------------------------------------
 $TargetDir    = "C:\mihomo"
 $ProvidersDir = "$TargetDir\providers"
 $ConfigFile   = "$TargetDir\config.yaml"
@@ -53,9 +55,9 @@ $StartupFolder = [System.Environment]::GetFolderPath('Startup')
 $VbsScript    = "$StartupFolder\LaunchMihomoTray.vbs"
 $MixedPort    = 40000
 
-
+# ---------------------------------------------------------------------------
 # UNINSTALLER PIPELINE
-
+# ---------------------------------------------------------------------------
 if ($Uninstall) {
     Clear-Host
     Write-Host "=========================================================" -ForegroundColor Yellow
@@ -145,6 +147,7 @@ Start-Sleep -Seconds 1
 # Step 2: Auto-Update Check & Binary Acquisition
 # ---------------------------------------------------------------------------
 $CurrentCoreVersion = "v1.19.26"
+$CurrentCoreVersionClean = $CurrentCoreVersion.TrimStart('v')
 Write-Host "[2/6] Checking for core updates (Current: $CurrentCoreVersion)..." -ForegroundColor Cyan
 
 foreach ($dir in @($TargetDir, $ProvidersDir)) {
@@ -155,14 +158,20 @@ try {
     $LatestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest" -UseBasicParsing -ErrorAction SilentlyContinue
     $TargetUrl = "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.26/mihomo-windows-amd64-compatible-v1.19.26.zip" # Fallback
     
-    if ($null -ne $LatestRelease -and $LatestRelease.tag_name -gt $CurrentCoreVersion) {
-        Write-Host "      [!] New core version detected: $($LatestRelease.tag_name). Pulling update..." -ForegroundColor Yellow
-        $matchingAsset = $LatestRelease.assets | Where-Object { $_.name -like "*windows-amd64-compatible*.zip" }
-        if ($matchingAsset) {
-            $TargetUrl = $matchingAsset.browser_download_url
+    if ($null -ne $LatestRelease -and $null -ne $LatestRelease.tag_name) {
+        $LatestTagClean = $LatestRelease.tag_name.TrimStart('v')
+        
+        if ([version]$LatestTagClean -gt [version]$CurrentCoreVersionClean) {
+            Write-Host "      [!] New core version detected: $($LatestRelease.tag_name). Pulling update..." -ForegroundColor Yellow
+            $matchingAsset = $LatestRelease.assets | Where-Object { $_.name -like "*windows-amd64-compatible*.zip" }
+            if ($matchingAsset) {
+                $TargetUrl = $matchingAsset.browser_download_url
+            }
+        } else {
+            Write-Host "      Core is up to date. Proceeding..." -ForegroundColor DarkGray
         }
     } else {
-        Write-Host "      Core is up to date or API unreachable. Proceeding..." -ForegroundColor DarkGray
+        Write-Host "      Could not verify update API. Proceeding with default..." -ForegroundColor DarkGray
     }
 
     $ZipPath   = "$TargetDir\mihomo.zip"
