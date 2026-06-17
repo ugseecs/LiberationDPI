@@ -13,7 +13,7 @@
     Author:  Usama Gulzar
     Version: 1.0.0
     License: MIT
-    GitHub:  https://github.com/usamagulzar/dpi-bypass-proxy
+    GitHub:  https://github.com/ugseecs/LiberationDPI
 #>
 
 param(
@@ -326,6 +326,21 @@ function Start-Mihomo {
         [void][System.Diagnostics.Process]::Start($psi)
     } catch { }
 }
+
+# ---------------------------------------------------------------------------
+# Watchdog Engine: Auto-healing for the Mihomo core
+# ---------------------------------------------------------------------------
+$Watchdog = New-Object System.Windows.Forms.Timer
+$Watchdog.Interval = 10000 # 10-second heartbeat check
+$Watchdog.Add_Tick({
+    $process = Get-Process -Name "mihomo" -ErrorAction SilentlyContinue
+    if (-not $process) {
+        # Silent restart: only alert if the user is actively looking at the tray
+        Start-Mihomo
+        $script:notifyIcon.ShowBalloonTip(2000, "LiberationDPI", "Engine heartbeat lost. Recovering tunnel...", [System.Windows.Forms.ToolTipIcon]::Warning)
+    }
+})
+$Watchdog.Start()
 
 function Rebuild-And-Restart {
     $providers = Get-Providers -Path $script:ProvidersFile
