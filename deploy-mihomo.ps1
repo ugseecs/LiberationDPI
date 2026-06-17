@@ -24,9 +24,8 @@ $ScriptVersion      = "1.0.0"
 $MinPSVersion       = [Version]"5.1"
 $ProgressPreference = 'SilentlyContinue'
 
-# ---------------------------------------------------------------------------
 # Guard: PowerShell Version & Admin Escalation
-# ---------------------------------------------------------------------------
+
 if ($PSVersionTable.PSVersion -lt $MinPSVersion) {
     Write-Error "PowerShell $MinPSVersion or later is required. You have $($PSVersionTable.PSVersion)."
     Exit 1
@@ -41,9 +40,8 @@ if (-not $isAdmin) {
     Exit
 }
 
-# ---------------------------------------------------------------------------
 # Core Layout Paths Matrix
-# ---------------------------------------------------------------------------
+
 $TargetDir    = "C:\mihomo"
 $ProvidersDir = "$TargetDir\providers"
 $ConfigFile   = "$TargetDir\config.yaml"
@@ -55,9 +53,9 @@ $StartupFolder = [System.Environment]::GetFolderPath('Startup')
 $VbsScript    = "$StartupFolder\LaunchMihomoTray.vbs"
 $MixedPort    = 40000
 
-# ---------------------------------------------------------------------------
+
 # UNINSTALLER PIPELINE
-# ---------------------------------------------------------------------------
+
 if ($Uninstall) {
     Clear-Host
     Write-Host "=========================================================" -ForegroundColor Yellow
@@ -144,17 +142,31 @@ Get-CimInstance Win32_Process -Filter "Name='wscript.exe'" -ErrorAction Silently
 Start-Sleep -Seconds 1
 
 # ---------------------------------------------------------------------------
-# Step 2: Environment provisioning & binary acquisition
+# Step 2: Auto-Update Check & Binary Acquisition
 # ---------------------------------------------------------------------------
-Write-Host "[2/6] Creating directories and pulling official core binary..." -ForegroundColor Cyan
+$CurrentCoreVersion = "v1.19.26"
+Write-Host "[2/6] Checking for core updates (Current: $CurrentCoreVersion)..." -ForegroundColor Cyan
+
 foreach ($dir in @($TargetDir, $ProvidersDir)) {
     if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
 }
 
 try {
-    $MihomoUrl = "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.26/mihomo-windows-amd64-compatible-v1.19.26.zip"
+    $LatestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest" -UseBasicParsing -ErrorAction SilentlyContinue
+    $TargetUrl = "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.26/mihomo-windows-amd64-compatible-v1.19.26.zip" # Fallback
+    
+    if ($null -ne $LatestRelease -and $LatestRelease.tag_name -gt $CurrentCoreVersion) {
+        Write-Host "      [!] New core version detected: $($LatestRelease.tag_name). Pulling update..." -ForegroundColor Yellow
+        $matchingAsset = $LatestRelease.assets | Where-Object { $_.name -like "*windows-amd64-compatible*.zip" }
+        if ($matchingAsset) {
+            $TargetUrl = $matchingAsset.browser_download_url
+        }
+    } else {
+        Write-Host "      Core is up to date or API unreachable. Proceeding..." -ForegroundColor DarkGray
+    }
+
     $ZipPath   = "$TargetDir\mihomo.zip"
-    Invoke-WebRequest -Uri $MihomoUrl -OutFile $ZipPath -UseBasicParsing -ErrorAction Stop
+    Invoke-WebRequest -Uri $TargetUrl -OutFile $ZipPath -UseBasicParsing -ErrorAction Stop
 
     $ExtractedPath = "$TargetDir\extracted"
     Expand-Archive -Path $ZipPath -DestinationPath $ExtractedPath -Force
