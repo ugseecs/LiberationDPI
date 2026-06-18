@@ -144,49 +144,37 @@ Get-CimInstance Win32_Process -Filter "Name='wscript.exe'" -ErrorAction Silently
 Start-Sleep -Seconds 1
 
 # ---------------------------------------------------------------------------
-# Step 2: Auto-Update Check & Binary Acquisition
+# Step 2: Fetch Latest Binary Directly (No Version Comparisons)
 # ---------------------------------------------------------------------------
-$CurrentCoreVersion = "v1.19.26"
-$CurrentCoreVersionClean = $CurrentCoreVersion.TrimStart('v')
-Write-Host "[2/6] Checking for core updates (Current: $CurrentCoreVersion)..." -ForegroundColor Cyan
-
-foreach ($dir in @($TargetDir, $ProvidersDir)) {
-    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
-}
+Write-Host "[2/6] Fetching latest Mihomo core binary from GitHub..." -ForegroundColor Cyan
 
 try {
-    $LatestRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest" -UseBasicParsing -ErrorAction SilentlyContinue
-    $TargetUrl = "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.26/mihomo-windows-amd64-compatible-v1.19.26.zip" # Fallback
+    # 1. Fetch release info
+    $Release = Invoke-RestMethod -Uri "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest" -UseBasicParsing -ErrorAction Stop
     
-    if ($null -ne $LatestRelease -and $null -ne $LatestRelease.tag_name) {
-        $LatestTagClean = $LatestRelease.tag_name.TrimStart('v')
-        
-        if ([version]$LatestTagClean -gt [version]$CurrentCoreVersionClean) {
-            Write-Host "      [!] New core version detected: $($LatestRelease.tag_name). Pulling update..." -ForegroundColor Yellow
-            $matchingAsset = $LatestRelease.assets | Where-Object { $_.name -like "*windows-amd64-compatible*.zip" }
-            if ($matchingAsset) {
-                $TargetUrl = $matchingAsset.browser_download_url
-            }
-        } else {
-            Write-Host "      Core is up to date. Proceeding..." -ForegroundColor DarkGray
-        }
-    } else {
-        Write-Host "      Could not verify update API. Proceeding with default..." -ForegroundColor DarkGray
-    }
-
-    $ZipPath   = "$TargetDir\mihomo.zip"
-    Invoke-WebRequest -Uri $TargetUrl -OutFile $ZipPath -UseBasicParsing -ErrorAction Stop
-
+    # 2. Get the specific Windows asset URL
+    $Asset = $Release.assets | Where-Object { $_.name -like "*windows-amd64-compatible*.zip" } | Select-Object -First 1
+    
+    # 3. Clean environment
+    if (Test-Path "$TargetDir\mihomo.zip") { Remove-Item "$TargetDir\mihomo.zip" -Force }
+    
+    # 4. Download
+    Write-Host "      Downloading: $($Asset.name)..." -ForegroundColor Yellow
+    Invoke-WebRequest -Uri $Asset.browser_download_url -OutFile "$TargetDir\mihomo.zip" -UseBasicParsing -ErrorAction Stop
+    
+    # 5. Extract and Deploy
     $ExtractedPath = "$TargetDir\extracted"
-    Expand-Archive -Path $ZipPath -DestinationPath $ExtractedPath -Force
-
-    $exeFile = Get-ChildItem -Path $ExtractedPath -Filter "*.exe" -Recurse | Select-Object -First 1
-    Move-Item -Path $exeFile.FullName -Destination $BinaryFile -Force
-    Remove-Item -Path $ExtractedPath, $ZipPath -Recurse -Force -ErrorAction SilentlyContinue
-    Write-Host "[OK] Core binary structure compiled." -ForegroundColor Green
+    if (Test-Path $ExtractedPath) { Remove-Item $ExtractedPath -Recurse -Force }
+    Expand-Archive -Path "$TargetDir\mihomo.zip" -DestinationPath $ExtractedPath -Force
+    
+    Move-Item -Path "$ExtractedPath\mihomo.exe" -Destination $BinaryFile -Force
+    
+    # 6. Cleanup
+    Remove-Item -Path $ExtractedPath, "$TargetDir\mihomo.zip" -Recurse -Force
+    Write-Host "[OK] Latest core deployed successfully." -ForegroundColor Green
 }
 catch {
-    Write-Host "[!] Fatal Error: Could not pull dependency archives. Check internet connection." -ForegroundColor Red
+    Write-Host "[!] Fatal Error: Could not reach GitHub API. Check your connection." -ForegroundColor Red
     Exit 1
 }
 
