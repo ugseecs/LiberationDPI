@@ -11,7 +11,7 @@
     deletes C:\mihomo, and drops the Windows startup hooks cleanly.
 .NOTES
     Author:  Usama Gulzar
-    Version: 1.0.0
+    Version: 1.1.0
     License: MIT
     GitHub:  https://github.com/ugseecs/LiberationDPI
 #>
@@ -20,7 +20,7 @@ param(
     [switch]$Uninstall
 )
 
-$ScriptVersion      = "1.2.0"
+$ScriptVersion      = "1.1.0"
 $MinPSVersion       = [Version]"5.1"
 $ProgressPreference = 'SilentlyContinue'
 
