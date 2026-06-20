@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>LiberationDPI Switch</title>
+<link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="brand-name">LiberationDPI Switch</span>
+    </div>
+    <button class="master-switch" id="masterSwitch" type="button" role="switch" aria-checked="true">
+      <span class="master-switch-track"><span class="master-switch-thumb"></span></span>
+      <span class="master-switch-label" id="masterSwitchLabel">Tunnel on</span>
+    </button>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="page" type="button">This page</button>
+    <button class="tab-btn" data-tab="rules" type="button">All rules<span class="rule-count" id="ruleCountBadge"></span></button>
+  </nav>
+
+  <section class="view" id="view-page">
+    <div class="page-meta" id="pageMeta">—</div>
+    <ul class="domain-list" id="domainList"></ul>
+    <p class="empty-state" id="pageEmpty" hidden>
+      Nothing failed on this tab yet. Browse around — anything that fails to load shows up here so you can route it through the tunnel.
+    </p>
+  </section>
+
+  <section class="view" id="view-rules" hidden>
+    <ul class="rule-list" id="ruleList"></ul>
+    <p class="empty-state" id="rulesEmpty" hidden>No rules saved yet. Add a domain or wildcard pattern below.</p>
+
+    <form class="add-rule-form" id="addRuleForm">
+      <input type="text" id="newPattern" placeholder="*.example.com or exact host" autocomplete="off" spellcheck="false" />
+      <select id="newMode" title="Routing mode">
+        <option value="proxy">Tunnel</option>
+        <option value="direct">Direct</option>
+      </select>
+      <button type="submit">Add</button>
+    </form>
+    <p class="hint">
+      <code>*</code> matches anything, <code>?</code> matches one character — e.g. <code>*.this.*</code> or <code>*.example.com</code>.
+      Rules are checked top to bottom; the first match wins, so drag-free reordering via the arrows lets you set priority.
+    </p>
+  </section>
+
+  <footer class="footer">
+    <button class="link-btn" id="reloadTabBtn" type="button">↻ Reload this tab</button>
+    <button class="link-btn" id="targetBtn" type="button">Tunnel target: <span id="targetLabel">127.0.0.1:40000</span></button>
+  </footer>
+
+  <div class="target-editor" id="targetEditor" hidden>
+    <input type="text" id="targetHost" placeholder="127.0.0.1" />
+    <span class="colon">:</span>
+    <input type="text" id="targetPort" placeholder="40000" />
+    <button id="targetSave" type="button">Save</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
